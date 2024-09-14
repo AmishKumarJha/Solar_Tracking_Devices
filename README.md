@@ -27,3 +27,7 @@ Relays: Connect the control pins of the relays to digital pins:
 11: Y-axis clockwise relay
 12: Y-axis counterclockwise relay
 Power: Ensure that the relay and LDR circuits are powered correctly from the power supply.
+
+Prototype of Our Project : 
+![WhatsApp Image 2024-09-05 at 02 03 12](https://github.com/user-attachments/assets/c7b729f7-1fbd-4fc1-8e47-a870d7b4030b)
+![WhatsApp Image 2024-09-05 at 02 03 12 (1)](https://github.com/user-attachments/assets/78d9fa67-0945-4151-997b-2bae61cab393)

@@ -1,0 +1,116 @@
+// Define pins for LDRs
+int LDRTopLeft = A0;
+int LDRTopRight = A1;
+int LDRBottomLeft = A2;
+int LDRBottomRight = A3;
+
+// Define pins for relays
+int relayPinX_Clockwise = 9;   // Relay for X-axis clockwise movement
+int relayPinX_CounterClockwise = 10; // Relay for X-axis counterclockwise movement
+int relayPinY_Clockwise = 11;  // Relay for Y-axis clockwise movement
+int relayPinY_CounterClockwise = 12; // Relay for Y-axis counterclockwise movement
+
+// Variables to store LDR values
+int LDRTL, LDRTR, LDRBL, LDRBR;
+
+// Threshold to prevent minor adjustments
+int threshold = 10;
+
+// Time tracking
+unsigned long previousMillis = 0;  // Stores the last time LDRs were read
+const long interval = 900000;      // 15 minutes in milliseconds
+
+void setup() {
+  // Set relay pins as output
+  pinMode(relayPinX_Clockwise, OUTPUT);
+  pinMode(relayPinX_CounterClockwise, OUTPUT);
+  pinMode(relayPinY_Clockwise, OUTPUT);
+  pinMode(relayPinY_CounterClockwise, OUTPUT);
+
+  // Start serial communication for debugging
+  Serial.begin(9600);
+
+  // Ensure all relays are initially off
+  digitalWrite(relayPinX_Clockwise, LOW);
+  digitalWrite(relayPinX_CounterClockwise, LOW);
+  digitalWrite(relayPinY_Clockwise, LOW);
+  digitalWrite(relayPinY_CounterClockwise, LOW);
+}
+
+void loop() {
+  // Get the current time
+  unsigned long currentMillis = millis();
+
+  // Check if 15 minutes have passed
+  if (currentMillis - previousMillis >= interval) {
+    // Save the last time LDRs were read
+    previousMillis = currentMillis;
+
+    bool xBalanced = false;
+    bool yBalanced = false;
+
+    // Loop until both X and Y axes are balanced
+    while (!xBalanced || !yBalanced) {
+      // Read LDR values
+      LDRTL = analogRead(LDRTopLeft);
+      LDRTR = analogRead(LDRTopRight);
+      LDRBL = analogRead(LDRBottomLeft);
+      LDRBR = analogRead(LDRBottomRight);
+
+      // Debugging
+      Serial.print("TL: ");
+      Serial.print(LDRTL);
+      Serial.print(" TR: ");
+      Serial.print(LDRTR);
+      Serial.print(" BL: ");
+      Serial.print(LDRBL);
+      Serial.print(" BR: ");
+      Serial.println(LDRBR);
+
+      // Calculate the average for top and bottom LDRs
+      int avgTop = (LDRTL + LDRTR) / 2;
+      int avgBottom = (LDRBL + LDRBR) / 2;
+      int avgLeft = (LDRTL + LDRBL) / 2;
+      int avgRight = (LDRTR + LDRBR) / 2;
+
+      // Adjust the horizontal position (X-axis)
+      if (!xBalanced) {
+        if (abs(avgLeft - avgRight) > threshold) {
+          if (avgLeft > avgRight) {
+            digitalWrite(relayPinX_Clockwise, HIGH);   // Activate clockwise relay
+            digitalWrite(relayPinX_CounterClockwise, LOW); // Deactivate counterclockwise relay
+          } else {
+            digitalWrite(relayPinX_Clockwise, LOW);    // Deactivate clockwise relay
+            digitalWrite(relayPinX_CounterClockwise, HIGH); // Activate counterclockwise relay
+          }
+        } else {
+          // Deactivate both relays if within threshold and mark X as balanced
+          digitalWrite(relayPinX_Clockwise, LOW);
+          digitalWrite(relayPinX_CounterClockwise, LOW);
+          xBalanced = true;
+        }
+      }
+
+      // Adjust the vertical position (Y-axis)
+      if (xBalanced && !yBalanced) {
+        if (abs(avgTop - avgBottom) > threshold) {
+          if (avgTop > avgBottom) {
+            digitalWrite(relayPinY_Clockwise, HIGH);   // Activate clockwise relay
+            digitalWrite(relayPinY_CounterClockwise, LOW); // Deactivate counterclockwise relay
+          } else {
+            digitalWrite(relayPinY_Clockwise, LOW);    // Deactivate clockwise relay
+            digitalWrite(relayPinY_CounterClockwise, HIGH); // Activate counterclockwise relay
+          }
+        } else {
+          // Deactivate both relays if within threshold and mark Y as balanced
+          digitalWrite(relayPinY_Clockwise, LOW);
+          digitalWrite(relayPinY_CounterClockwise, LOW);
+          yBalanced = true;
+        }
+      }
+
+      // Small delay to prevent relay chattering
+      delay(100);
+    }
+  }
+}
